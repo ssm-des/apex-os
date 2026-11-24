@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#090d16" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ApexOS" />
+  <title>ApexOS — Personal Transformation Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bg: '#090d16',
+            card: '#111827',
+            border: '#1f2937',
+            accent: '#10b981',
+            accent2: '#3b82f6'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background-color: #090d16; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    input, select { background-color: #1f2937; color: #f9fafb; border: 1px solid #374151; border-radius: 0.6rem; padding: 0.55rem 0.75rem; font-size: 0.9rem; width: 100%; }
+    input:focus, select:focus { outline: none; border-color: #10b981; }
+    .tab-btn.active { color: #10b981; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen pb-24 select-none">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 bg-bg/90 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between max-w-lg mx-auto">
+    <div>
+      <h1 class="text-lg font-bold tracking-tight text-white">Apex<span class="text-emerald-400">OS</span></h1>
+      <p id="headerSubtitle" class="text-xs text-gray-400">Target: July Milestone</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <input type="date" id="activeDatePicker" class="!w-auto !py-1 !px-2 text-xs bg-gray-800 border-gray-700" />
+      <button onclick="openBackupModal()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 border border-gray-700" title="Backup / Settings">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-lg mx-auto px-4 pt-4 space-y-4">
+
+    <!-- ==================== TAB 1: DASHBOARD & CALCULATOR ==================== -->
+    <section id="tab-dashboard" class="space-y-4">
+      <!-- Daily Calorie & Protein Summary -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Daily Fuel & Deficit</h2>
+          <span id="deficitStatusBadge" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">On Track</span>
+        </div>
+
+        <!-- Calories Bar -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-300">Calories: <strong id="calConsumed" class="text-white">0</strong> / <span id="calTarget">2100</span> kcal</span>
+            <span id="calRemaining" class="font-semibold text-emerald-400">2100 left</span>
+          </div>
+          <div class="w-full bg-gray-800 h-3 rounded-full overflow-hidden">
+            <div id="calProgressBar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Protein Bar -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-300">Protein: <strong id="proConsumed" class="text-white">0</strong> / <span id="proTarget">145</span> g</span>
+            <span id="proRemaining" class="font-semibold text-blue-400">145g left</span>
+          </div>
+          <div class="w-full bg-gray-800 h-3 rounded-full overflow-hidden">
+            <div id="proProgressBar" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Quick Stats Grid -->
+        <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+          <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
+            <div class="text-xs text-gray-400">Current Wt</div>
+            <div id="statCurrentWeight" class="text-base font-bold text-white mt-0.5">87.0 kg</div>
+          </div>
+          <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
+            <div class="text-xs text-gray-400">Workouts</div>
+            <div id="statWorkoutsToday" class="text-base font-bold text-emerald-400 mt-0.5">0</div>
+          </div>
+          <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
+            <div class="text-xs text-gray-400">Deep Work</div>
+            <div id="statCareerHours" class="text-base font-bold text-blue-400 mt-0.5">0.0 hrs</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weight Check-in Card -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Weight Progress</h2>
+          <span id="weightChangeBadge" class="text-xs text-emerald-400 font-medium">Start: 87.0 kg</span>
+        </div>
+        <div class="flex gap-2">
+          <input type="number" step="0.1" id="weightInput" placeholder="e.g. 86.4" />
+          <button onclick="logWeight()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 rounded-xl text-sm shrink-0">Log kg</button>
+        </div>
+        <div id="weightHistoryList" class="flex gap-2 overflow-x-auto pb-1 text-xs"></div>
+      </div>
+
+      <!-- Sustainable Calorie Deficit Calculator -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Deficit & Macro Calculator</h2>
+          <span id="tdeeDisplay" class="text-xs text-gray-400">TDEE: ~2600 kcal</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div>
+            <label class="text-gray-400 block mb-1">Height (cm)</label>
+            <input type="number" id="calcHeight" value="175" onchange="recalculateTargets()" />
+          </div>
+          <div>
+            <label class="text-gray-400 block mb-1">Age (yrs)</label>
+            <input type="number" id="calcAge" value="19" onchange="recalculateTargets()" />
+          </div>
+          <div>
+            <label class="text-gray-400 block mb-1">Sex</label>
+            <select id="calcSex" onchange="recalculateTargets()">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 block mb-1">Activity Level</label>
+            <select id="calcActivity" onchange="recalculateTargets()">
+              <option value="1.2">Sedentary (Desk/Study)</option>
+              <option value="1.375" selected>Light (1-3 workouts/wk)</option>
+              <option value="1.55">Moderate (3-5 workouts/wk)</option>
+              <option value="1.725">Active (6-7 workouts/wk)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 block mb-1">Daily Deficit Pace</label>
+            <select id="calcDeficit" onchange="recalculateTargets()">
+              <option value="300">Gentle (-300 kcal | ~0.3 kg/wk)</option>
+              <option value="500" selected>Sustainable (-500 kcal | ~0.5 kg/wk)</option>
+              <option value="650">Focused (-650 kcal | ~0.65 kg/wk)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-gray-400 block mb-1">Daily Protein Goal (g)</label>
+            <input type="number" id="calcProteinGoal" value="145" onchange="recalculateTargets()" />
+          </div>
+        </div>
+        <p id="calcAdviceNote" class="text-xs text-gray-400 bg-gray-900/70 p-2.5 rounded-xl border border-gray-800"></p>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: MEAL & PROTEIN TRACKER ==================== -->
+    <section id="tab-meals" class="hidden space-y-4">
+      <!-- Quick 1-Tap Presets -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-2.5">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">1-Tap Quick Foods</h2>
+          <button onclick="addCustomPresetPrompt()" class="text-xs text-emerald-400 hover:underline">+ New Preset</button>
+        </div>
+        <div id="presetContainer" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Log Custom Meal Form -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Log Meal</h2>
+        <input type="text" id="mealName" placeholder="Meal name (e.g. 3 Eggs + 2 Roti)" />
+        <div class="grid grid-cols-2 gap-2">
+          <input type="number" id="mealKcal" placeholder="Calories (kcal)" />
+          <input type="number" id="mealProtein" placeholder="Protein (g)" />
+        </div>
+        <button onclick="addMeal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-sm">Add Meal</button>
+      </div>
+
+      <!-- Today's Meals List -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-2.5">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Logged Meals</h2>
+        <div id="mealList" class="space-y-2 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: WORKOUTS & HABITS ==================== -->
+    <section id="tab-fitness" class="hidden space-y-4">
+      <!-- Daily Habits Checklist -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Daily Non-Negotiables</h2>
+          <span id="habitScore" class="text-xs font-semibold text-emerald-400">0/5 Done</span>
+        </div>
+        <div id="habitsContainer" class="space-y-2"></div>
+      </div>
+
+      <!-- Log Workout -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Log Exercise Session</h2>
+        <div class="grid grid-cols-3 gap-2">
+          <select id="workoutType" class="col-span-2">
+            <option value="Strength / Gym">🏋️ Strength / Gym</option>
+            <option value="Walk / Running">🏃 Walk / Running</option>
+            <option value="Home / Bodyweight">🤸 Home / Bodyweight</option>
+            <option value="Sports / Cardio">⚽ Sports / Cardio</option>
+          </select>
+          <input type="number" id="workoutDuration" placeholder="Mins (e.g. 45)" />
+        </div>
+        <input type="text" id="workoutNotes" placeholder="Exercises / PRs (e.g. Push day, 8k steps)" />
+        <button onclick="addWorkout()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-sm">Save Workout</button>
+      </div>
+
+      <!-- Logged Workouts List -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-2">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Activity Log</h2>
+        <div id="workoutList" class="space-y-2 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: CAREER, FINANCE & MILESTONES ==================== -->
+    <section id="tab-growth" class="hidden space-y-4">
+      <!-- Career / Coding Deep Work Log -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Career & Coding Log</h2>
+          <span id="totalCareerLifetime" class="text-xs text-blue-400 font-medium">Total: 0.0 hrs</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <input type="text" id="careerTopic" class="col-span-2" placeholder="Topic (e.g. DSA Graphs, React App)" />
+          <input type="number" step="0.5" id="careerHours" placeholder="Hours (1.5)" />
+        </div>
+        <button onclick="addCareerLog()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm">Log Focus Session</button>
+        <div id="careerList" class="space-y-2 text-sm pt-1"></div>
+      </div>
+
+      <!-- Life Milestones (Health, Career, Looks, Finances) -->
+      <div class="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Milestones & Achievements</h2>
+          <span id="milestoneCountBadge" class="text-xs text-emerald-400 font-medium">0/0</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <select id="milestoneCategory">
+            <option value="Health">💪 Health</option>
+            <option value="Career">💻 Career</option>
+            <option value="Finances">💰 Finances</option>
+            <option value="Looks">✨ Looks</option>
+          </select>
+          <input type="text" id="milestoneTitle" class="col-span-2" placeholder="New milestone goal..." />
+        </div>
+        <button onclick="addMilestone()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-semibold py-2 rounded-xl text-sm">+ Add Milestone</button>
+        <div id="milestoneList" class="space-y-2 pt-1"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 inset-x-0 z-30 bg-card/95 backdrop-blur border-t border-border">
+    <div class="max-w-lg mx-auto grid grid-cols-4 text-center py-2 text-xs font-medium text-gray-400">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn active flex flex-col items-center gap-0.5 py-1">
+        <span class="text-lg">📊</span><span>Dashboard</span>
+      </button>
+      <button onclick="switchTab('meals')" id="nav-meals" class="tab-btn flex flex-col items-center gap-0.5 py-1">
+        <span class="text-lg">🍗</span><span>Meals</span>
+      </button>
+      <button onclick="switchTab('fitness')" id="nav-fitness" class="tab-btn flex flex-col items-center gap-0.5 py-1">
+        <span class="text-lg">🏋️</span><span>Fitness</span>
+      </button>
+      <button onclick="switchTab('growth')" id="nav-growth" class="tab-btn flex flex-col items-center gap-0.5 py-1">
+        <span class="text-lg">🚀</span><span>Growth</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Backup / Restore Modal -->
+  <div id="backupModal" class="hidden fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+    <div class="bg-card border border-border rounded-2xl max-w-sm w-full p-5 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-white">Data Backup & Portability</h3>
+        <button onclick="closeBackupModal()" class="text-gray-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p class="text-xs text-gray-400 leading-relaxed">Your logs live privately on your device. Export a JSON backup weekly to Google Drive or WhatsApp so you never lose your progress.</p>
+      <button onclick="exportData()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-sm">⬇️ Download JSON Backup</button>
+      <div class="pt-1">
+        <label class="block text-xs text-gray-400 mb-1">Restore from JSON file:</label>
+        <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="text-xs" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Dynamic PWA Manifest Injection (Makes it installable on Android/iOS)
+    const manifest = {
+      name: "ApexOS Personal Tracker",
+      short_name: "ApexOS",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#090d16",
+      theme_color: "#090d16",
+      icons: [{
+        src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2310b981'/><text x='50' y='67' font-size='54' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>",
+        sizes: "192x192",
+        type: "image/svg+xml"
+      }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = URL.createObjectURL(manifestBlob);
+    document.head.appendChild(manifestLink);
+
+    // 2. Application State & Default Seed Data
+    const STORAGE_KEY = 'apex_os_v1';
+    const todayISO = () => new Date().toLocaleDateString('en-CA');
+
+    const defaultState = {
+      profile: { weight: 87.0, height: 175, age: 19, sex: 'male', activity: 1.375, deficit: 500, proteinGoal: 145 },
+      logsByDate: {},
+      weightHistory: [{ date: todayISO(), weight: 87.0 }],
+      presets: [
+        { name: 'Whey Scoop (Water)', kcal: 120, protein: 24 },
+        { name: '3 Whole Eggs', kcal: 215, protein: 18 },
+        { name: '150g Chicken Breast', kcal: 248, protein: 46 },
+        { name: '150g Paneer / Tofu', kcal: 230, protein: 22 },
+        { name: 'Dal + 1 Cup Rice', kcal: 420, protein: 14 }
+      ],
+      milestones: [
+        { id: 1, category: 'Health', title: 'Hit 80.0 kg milestone sustainably', done: false },
+        { id: 2, category: 'Health', title: 'Reach July target (~73–75 kg) & maintain strength', done: false },
+        { id: 3, category: 'Career', title: 'Build & deploy 3 full-stack CS projects', done: false },
+        { id: 4, category: 'Finances', title: 'Track monthly student budget & save ₹15,000', done: false },
+        { id: 5, category: 'Looks', title: 'Consistent skincare, posture & clean diet streak', done: false }
+      ]
+    };
+
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState;
+    let activeDate = todayISO();
+
+    const HABIT_DEFS = [
+      { key: 'steps', label: '🚶 8,000+ Steps / Daily Movement' },
+      { key: 'protein', label: '🥩 Hit Daily Protein Target' },
+      { key: 'water', label: '💧 3+ Liters Water' },
+      { key: 'sleep', label: '😴 7+ Hours Quality Sleep' },
+      { key: 'code', label: '💻 1+ Hr Coding / Career Study' }
+    ];
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function getDayLog(dateStr) {
+      if (!state.logsByDate[dateStr]) {
+        state.logsByDate[dateStr] = { meals: [], workouts: [], career: [], habits: {} };
+      }
+      return state.logsByDate[dateStr];
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    // 3. Navigation & Date Handling
+    const datePicker = document.getElementById('activeDatePicker');
+    datePicker.value = activeDate;
+    datePicker.addEventListener('change', (e) => {
+      activeDate = e.target.value || todayISO();
+      renderAll();
+    });
+
+    function switchTab(tabName) {
+      ['dashboard', 'meals', 'fitness', 'growth'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
+        document.getElementById(`nav-${t}`).classList.toggle('active', t === tabName);
+      });
+    }
+
+    // 4. BMR, TDEE & Safe Deficit Calculator
+    function calculateMetrics() {
+      const { weight, height, age, sex, activity, deficit, proteinGoal } = state.profile;
+      const bmr = sex === 'male'
+        ? (10 * weight) + (6.25 * height) - (5 * age) + 5
+        : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+      const tdee = Math.round(bmr * activity);
+      const safeFloor = Math.max(Math.round(bmr), 1400);
+      const targetKcal = Math.max(safeFloor, tdee - deficit);
+      const actualDeficit = tdee - targetKcal;
+      const weeklyLoss = ((actualDeficit * 7) / 7700).toFixed(2);
+      return { bmr: Math.round(bmr), tdee, targetKcal, actualDeficit, weeklyLoss, proteinGoal };
+    }
+
+    function recalculateTargets() {
+      state.profile.height = Number(document.getElementById('calcHeight').value) || 175;
+      state.profile.age = Number(document.getElementById('calcAge').value) || 19;
+      state.profile.sex = document.getElementById('calcSex').value;
+      state.profile.activity = Number(document.getElementById('calcActivity').value) || 1.375;
+      state.profile.deficit = Number(document.getElementById('calcDeficit').value) || 500;
+      state.profile.proteinGoal = Number(document.getElementById('calcProteinGoal').value) || 145;
+      saveState();
+    }
+
+    // 5. Actions: Weight, Meals, Workouts, Habits, Career, Milestones
+    function logWeight() {
+      const val = parseFloat(document.getElementById('weightInput').value);
+      if (!val || val < 35 || val > 250) return;
+      state.profile.weight = val;
+      const existingIdx = state.weightHistory.findIndex(w => w.date === activeDate);
+      if (existingIdx >= 0) state.weightHistory[existingIdx].weight = val;
+      else state.weightHistory.push({ date: activeDate, weight: val });
+      state.weightHistory.sort((a, b) => a.date.localeCompare(b.date));
+      document.getElementById('weightInput').value = '';
+      saveState();
+    }
+
+    function addMeal(customName, customKcal, customProtein) {
+      const name = customName || document.getElementById('mealName').value.trim();
+      const kcal = customKcal !== undefined ? customKcal : Number(document.getElementById('mealKcal').value);
+      const protein = customProtein !== undefined ? customProtein : Number(document.getElementById('mealProtein').value);
+      if (!name || isNaN(kcal) || kcal <= 0) return;
+      const day = getDayLog(activeDate);
+      day.meals.push({ id: Date.now(), name, kcal, protein: protein || 0 });
+      if (!customName) {
+        document.getElementById('mealName').value = '';
+        document.getElementById('mealKcal').value = '';
+        document.getElementById('mealProtein').value = '';
+      }
+      saveState();
+    }
+
+    function deleteMeal(id) {
+      const day = getDayLog(activeDate);
+      day.meals = day.meals.filter(m => m.id !== id);
+      saveState();
+    }
+
+    function addCustomPresetPrompt() {
+      const name = prompt("Food preset name (e.g. 4 Egg Whites):");
+      if (!name) return;
+      const kcal = Number(prompt("Calories (kcal):"));
+      const protein = Number(prompt("Protein (grams):"));
+      if (kcal > 0) {
+        state.presets.push({ name: name.trim(), kcal, protein: protein || 0 });
+        saveState();
+      }
+    }
+
+    function toggleHabit(key) {
+      const day = getDayLog(activeDate);
+      day.habits[key] = !day.habits[key];
+      saveState();
+    }
+
+    function addWorkout() {
+      const type = document.getElementById('workoutType').value;
+      const duration = Number(document.getElementById('workoutDuration').value) || 30;
+      const notes = document.getElementById('workoutNotes').value.trim();
+      const day = getDayLog(activeDate);
+      day.workouts.push({ id: Date.now(), type, duration, notes });
+      document.getElementById('workoutDuration').value = '';
+      document.getElementById('workoutNotes').value = '';
+      saveState();
+    }
+
+    function deleteWorkout(id) {
+      const day = getDayLog(activeDate);
+      day.workouts = day.workouts.filter(w => w.id !== id);
+      saveState();
+    }
+
+    function addCareerLog() {
+      const topic = document.getElementById('careerTopic').value.trim();
+      const hours = parseFloat(document.getElementById('careerHours').value);
+      if (!topic || !hours || hours <= 0) return;
+      const day = getDayLog(activeDate);
+      day.career.push({ id: Date.now(), topic, hours });
+      document.getElementById('careerTopic').value = '';
+      document.getElementById('careerHours').value = '';
+      saveState();
+    }
+
+    function deleteCareerLog(id) {
+      const day = getDayLog(activeDate);
+      day.career = day.career.filter(c => c.id !== id);
+      saveState();
+    }
+
+    function addMilestone() {
+      const category = document.getElementById('milestoneCategory').value;
+      const title = document.getElementById('milestoneTitle').value.trim();
+      if (!title) return;
+      state.milestones.unshift({ id: Date.now(), category, title, done: false });
+      document.getElementById('milestoneTitle').value = '';
+      saveState();
+    }
+
+    function toggleMilestone(id) {
+      const item = state.milestones.find(m => m.id === id);
+      if (item) item.done = !item.done;
+      saveState();
+    }
+
+    function deleteMilestone(id) {
+      state.milestones = state.milestones.filter(m => m.id !== id);
+      saveState();
+    }
+
+    // 6. Backup & Restore
+    function openBackupModal() { document.getElementById('backupModal').classList.remove('hidden'); }
+    function closeBackupModal() { document.getElementById('backupModal').classList.add('hidden'); }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `apexos-backup-${todayISO()}.json`;
+      a.click();
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (parsed.profile && parsed.logsByDate) {
+            state = parsed;
+            saveState();
+            closeBackupModal();
+            alert("Backup restored successfully!");
+          }
+        } catch { alert("Invalid backup JSON file."); }
+      };
+      reader.readAsText(file);
+    }
+
+    // 7. Render UI
+    function renderAll() {
+      const day = getDayLog(activeDate);
+      const metrics = calculateMetrics();
+
+      // Populate calculator inputs
+      document.getElementById('calcHeight').value = state.profile.height;
+      document.getElementById('calcAge').value = state.profile.age;
+      document.getElementById('calcSex').value = state.profile.sex;
+      document.getElementById('calcActivity').value = state.profile.activity;
+      document.getElementById('calcDeficit').value = state.profile.deficit;
+      document.getElementById('calcProteinGoal').value = state.profile.proteinGoal;
+
+      // Macros & Calories
+      const totalKcal = day.meals.reduce((sum, m) => sum + m.kcal, 0);
+      const totalPro = day.meals.reduce((sum, m) => sum + m.protein, 0);
+      const kcalRem = metrics.targetKcal - totalKcal;
+      const proRem = Math.max(0, metrics.proteinGoal - totalPro);
+
+      document.getElementById('calConsumed').textContent = totalKcal;
+      document.getElementById('calTarget').textContent = metrics.targetKcal;
+      document.getElementById('calRemaining').textContent = kcalRem >= 0 ? `${kcalRem} left` : `${Math.abs(kcalRem)} over`;
+      document.getElementById('calRemaining').className = `font-semibold ${kcalRem >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      document.getElementById('calProgressBar').style.width = `${Math.min(100, (totalKcal / metrics.targetKcal) * 100)}%`;
+      document.getElementById('calProgressBar').className = `h-full transition-all duration-300 ${kcalRem >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`;
+
+      document.getElementById('proConsumed').textContent = totalPro;
+      document.getElementById('proTarget').textContent = metrics.proteinGoal;
+      document.getElementById('proRemaining').textContent = proRem > 0 ? `${proRem}g left` : `Goal Hit!`;
+      document.getElementById('proProgressBar').style.width = `${Math.min(100, (totalPro / metrics.proteinGoal) * 100)}%`;
+
+      const badge = document.getElementById('deficitStatusBadge');
+      if (totalKcal === 0) { badge.textContent = 'Ready to Log'; badge.className = 'text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-800 text-gray-300'; }
+      else if (kcalRem >= 0) { badge.textContent = 'In Deficit'; badge.className = 'text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400'; }
+      else { badge.textContent = 'Above Target'; badge.className = 'text-xs font-medium px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400'; }
+
+      // Dashboard Quick Stats
+      document.getElementById('statCurrentWeight').textContent = `${state.profile.weight.toFixed(1)} kg`;
+      document.getElementById('statWorkoutsToday').textContent = day.workouts.length;
+      const todayCareerHrs = day.career.reduce((s, c) => s + c.hours, 0);
+      document.getElementById('statCareerHours').textContent = `${todayCareerHrs.toFixed(1)} hrs`;
+
+      document.getElementById('tdeeDisplay').textContent = `BMR: ${metrics.bmr} | TDEE: ${metrics.tdee} kcal`;
+      document.getElementById('calcAdviceNote').textContent =
+        `Eating ~${metrics.targetKcal} kcal/day creates a ${metrics.actualDeficit} kcal deficit (~${metrics.weeklyLoss} kg/week loss). Safe minimum floor is locked at ${Math.max(metrics.bmr, 1400)} kcal.`;
+
+      // Weight History
+      const startWt = state.weightHistory[0]?.weight || 87.0;
+      const diff = (state.profile.weight - startWt).toFixed(1);
+      document.getElementById('weightChangeBadge').textContent = `Start: ${startWt} kg (${diff > 0 ? '+' : ''}${diff} kg)`;
+      document.getElementById('weightHistoryList').innerHTML = state.weightHistory.slice(-6).reverse().map(w =>
+        `<div class="bg-gray-900 border border-gray-800 px-2.5 py-1.5 rounded-lg shrink-0">
+          <div class="text-gray-400">${w.date.slice(5)}</div>
+          <div class="font-bold text-white">${w.weight} kg</div>
+        </div>`
+      ).join('');
+
+      // Presets & Meal List
+      document.getElementById('presetContainer').innerHTML = state.presets.map(p =>
+        `<button onclick="addMeal('${escapeHtml(p.name)}', ${p.kcal}, ${p.protein})" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-2.5 py-1.5 rounded-xl text-xs text-left">
+          <div class="font-medium text-white">${escapeHtml(p.name)}</div>
+          <div class="text-gray-400">${p.kcal} kcal · ${p.protein}g P</div>
+        </button>`
+      ).join('');
+
+      document.getElementById('mealList').innerHTML = day.meals.length ? day.meals.map(m =>
+        `<div class="flex justify-between items-center bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
+          <div>
+            <div class="font-medium text-white">${escapeHtml(m.name)}</div>
+            <div class="text-xs text-gray-400">${m.kcal} kcal · <span class="text-blue-400">${m.protein}g protein</span></div>
+          </div>
+          <button onclick="deleteMeal(${m.id})" class="text-gray-500 hover:text-rose-400 px-2">✕</button>
+        </div>`
+      ).join('') : `<p class="text-xs text-gray-500">No meals logged for this date yet.</p>`;
+
+      // Habits
+      const doneHabits = HABIT_DEFS.filter(h => day.habits[h.key]).length;
+      document.getElementById('habitScore').textContent = `${doneHabits}/${HABIT_DEFS.length} Done`;
+      document.getElementById('habitsContainer').innerHTML = HABIT_DEFS.map(h => {
+        const checked = !!day.habits[h.key];
+        return `<div onclick="toggleHabit('${h.key}')" class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer ${checked ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300' : 'bg-gray-900/80 border-gray-800 text-gray-300'}">
+          <span class="text-sm">${h.label}</span>
+          <span class="text-base">${checked ? '✅' : '⬜'}</span>
+        </div>`;
+      }).join('');
+
+      // Workouts
+      document.getElementById('workoutList').innerHTML = day.workouts.length ? day.workouts.map(w =>
+        `<div class="flex justify-between items-center bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
+          <div>
+            <div class="font-medium text-white">${escapeHtml(w.type)} · ${w.duration} min</div>
+            ${w.notes ? `<div class="text-xs text-gray-400">${escapeHtml(w.notes)}</div>` : ''}
+          </div>
+          <button onclick="deleteWorkout(${w.id})" class="text-gray-500 hover:text-rose-400 px-2">✕</button>
+        </div>`
+      ).join('') : `<p class="text-xs text-gray-500">No workouts logged today.</p>`;
+
+      // Career Logs & Lifetime Hours
+      let lifetimeHrs = 0;
+      Object.values(state.logsByDate).forEach(d => (d.career || []).forEach(c => lifetimeHrs += c.hours));
+      document.getElementById('totalCareerLifetime').textContent = `Total: ${lifetimeHrs.toFixed(1)} hrs`;
+
+      document.getElementById('careerList').innerHTML = day.career.length ? day.career.map(c =>
+        `<div class="flex justify-between items-center bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
+          <div>
+            <div class="font-medium text-white">${escapeHtml(c.topic)}</div>
+            <div class="text-xs text-blue-400">${c.hours} hrs focused work</div>
+          </div>
+          <button onclick="deleteCareerLog(${c.id})" class="text-gray-500 hover:text-rose-400 px-2">✕</button>
+        </div>`
+      ).join('') : `<p class="text-xs text-gray-500">Log your DSA, project building, or study blocks here.</p>`;
+
+      // Milestones
+      const doneMilestones = state.milestones.filter(m => m.done).length;
+      document.getElementById('milestoneCountBadge').textContent = `${doneMilestones}/${state.milestones.length} Achieved`;
+      document.getElementById('milestoneList').innerHTML = state.milestones.map(m =>
+        `<div class="flex items-center justify-between p-2.5 rounded-xl border ${m.done ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-gray-900/80 border-gray-800'}">
+          <div onclick="toggleMilestone(${m.id})" class="flex items-center gap-2.5 cursor-pointer flex-1">
+            <span>${m.done ? '🏆' : '⭕'}</span>
+            <div>
+              <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">${escapeHtml(m.category)}</span>
+              <div class="text-sm mt-0.5 ${m.done ? 'line-through text-gray-400' : 'text-white'}">${escapeHtml(m.title)}</div>
+            </div>
+          </div>
+          <button onclick="deleteMilestone(${m.id})" class="text-gray-500 hover:text-rose-400 px-2">✕</button>
+        </div>`
+      ).join('');
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
